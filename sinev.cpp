@@ -7,15 +7,50 @@
 
 using namespace std;
 
+//Colors datatype
+struct Color{
+	unsigned short int r;
+	unsigned short int g;
+	unsigned short int b;
+};
+
+Color obs_color[10] = {
+	{15, 66, 98}, //Color 1
+	{20, 86, 128}, //Color 2
+	{40, 66, 68}, //Color 3
+	{50, 76, 135}, //Color 4
+	{87, 34, 5}, //Color 5
+	{22, 45, 198}, //Color 6
+	{200, 100, 200}, //Color 7
+	{70, 43, 97}, //Color 8
+	{56, 64, 100}, //Color 9
+	{67, 100, 46}, //Color 10
+};
+
+Color player_color[10] = {
+	{15, 66, 98}, //Color 1
+	{20, 86, 128}, //Color 2
+	{40, 66, 68}, //Color 3
+	{50, 76, 135}, //Color 4
+	{87, 34, 5}, //Color 5
+	{22, 45, 198}, //Color 6
+	{200, 100, 200}, //Color 7
+	{70, 43, 97}, //Color 8
+	{56, 64, 100}, //Color 9
+	{67, 100, 46}, //Color 10
+};
+
+int level = 0;
+
 class Player {
 	public:	
 		int posy=30, radius=15,  posx=2*radius, y_decider=0;
 		void draw_player(){
 			set_ydecider();  // continuosly changes y position of player
-			setcolor(1);
-			setfillstyle(SOLID_FILL,1);
+			setcolor(COLOR(player_color[level].r, player_color[level].g, player_color[level].b));
+			setfillstyle(SOLID_FILL,COLOR(player_color[level].r, player_color[level].g, player_color[level].b));
 			circle(posx,posy,radius);
-			floodfill(posx,posy,1);
+			floodfill(posx,posy,COLOR(player_color[level].r, player_color[level].g, player_color[level].b));
 		}
 		void set_ydecider(){
 			if(posy>=getmaxy()-radius||posy<=radius)
@@ -27,7 +62,7 @@ class Player {
 			}
 		}
 		void set_posx_by_mouse_actions(int maxx){
-			cout<<"posxxxx " << posx<< endl;
+			//cout<<"posxxxx " << posx<< endl;
 			if(ismouseclick(WM_LBUTTONDOWN)){
 				if(posx>=radius)
 					posx=posx-10;
@@ -52,27 +87,45 @@ class Player {
 class Obstacles {
 	public:
 		int posx,  posy=getmaxy(), radius=60, maxx=800;
+		
+		static void change_level(int score, int maxx, int midy){
+			if(score%25 == 0){
+				if(level < 10) level++;
+			}
+		}
+		
 		void draw_obstacles(){
-			setcolor(15);
-			setfillstyle(SOLID_FILL,15);
+			setcolor(COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
+			setfillstyle(SOLID_FILL, COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
 			circle(posx,0,radius);
-			floodfill(posx,0,15);
+			floodfill(posx,0, COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
 			circle(posx,posy,radius);
-			floodfill(posx,posy,15);
+			floodfill(posx,posy, COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
 			if(posx-15<=0)
 				posx=maxx;
 			posx=posx-15;
 		}   
 };
 
+
 int display_score(chrono::steady_clock::time_point begin, int maxx, int midy){
 	settextstyle(COMPLEX_FONT, HORIZ_DIR, 2);
 	chrono::steady_clock::time_point end = chrono::steady_clock::now();
 	int t = (chrono::duration_cast<chrono::microseconds>(end - begin).count())/1000000;
+	static int prev_t = 0;
+	if(t != prev_t){
+		Obstacles::change_level(t, maxx, midy);
+		prev_t = t;
+	}
 	char buffer[16] = {0};
 	itoa(t, buffer, 10);
-	outtextxy(maxx+20, midy, "Score: ");
+	outtextxy(maxx+20, midy, (char *)"Score: ");
 	outtextxy(maxx+100, midy, buffer);	
+	
+	itoa(level+1, buffer, 10);
+	outtextxy(maxx+20, midy-20, (char *)"Level: ");
+	outtextxy(maxx+100, midy-20, buffer);
+	
 	return 0;
 }
 
@@ -81,8 +134,8 @@ void initialize_game(int x, int y){
 	while(counter>=1){
 		cleardevice();
 		settextstyle(COMPLEX_FONT, HORIZ_DIR, 3);
-	    outtextxy(x-40, y, "Welcome to SINE-V !!");
-		outtextxy(x, y+40, " Starts in ");
+	    outtextxy(x-40, y, (char *)"Welcome to SINE-V !!");
+		outtextxy(x, y+40, (char *)" Starts in ");
 		char buffer[16] = {0};
 		itoa(counter, buffer, 10);
 		outtextxy(x+150, y+40, buffer);
@@ -96,7 +149,7 @@ int check_for_pause(int pause, int midx, int midy){
 		if (getch()==32){
 			pause=!pause;
 			settextstyle(COMPLEX_FONT, HORIZ_DIR, 5);
-			outtextxy(midx, midy, ".Paused!");
+			outtextxy(midx, midy, (char *)".Paused!");
 		}
 	}
 	return pause;
@@ -122,6 +175,7 @@ int mouse_actions(int x, int radius, int maxx){
 	return x;
 		
 }
+
 int main(){
 	initwindow(1000, 600); 
 	Player pl;    
@@ -149,7 +203,7 @@ int main(){
 		int d2 = sqrt((obs.posx-pl.posx)*(obs.posx-pl.posx) + (0-pl.posy)*(0-pl.posy));
 		if ((d1>=obs.radius-pl.radius && d1<pl.radius+obs.radius) or (d2>=obs.radius-pl.radius && d2<pl.radius+obs.radius)){
 			settextstyle(COMPLEX_FONT, HORIZ_DIR, 5);
-			outtextxy(midx, midy, ".Game Over!");
+			outtextxy(midx, midy, (char *)".Game Over!");
 			break;
 		}
 		
