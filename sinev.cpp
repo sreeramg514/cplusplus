@@ -4,76 +4,74 @@
 #include<cmath>
 #include<chrono>
 #include<string>
+#include<stack>
 
 using namespace std;
 
-//Colors datatype
-struct Color{
-	unsigned short int r;
-	unsigned short int g;
-	unsigned short int b;
+int obs_color[6] = {
+	9, //Light BLUE
+	3, //CYAN
+	5, //MAGENTA
+	12, //LIGHTGREEN
+	10, //LIGHTRED
+	4 //RED
 };
 
-Color obs_color[10] = {
-	{15, 66, 98}, //Color 1
-	{20, 86, 128}, //Color 2
-	{40, 66, 68}, //Color 3
-	{50, 76, 135}, //Color 4
-	{87, 34, 5}, //Color 5
-	{22, 45, 198}, //Color 6
-	{200, 100, 200}, //Color 7
-	{70, 43, 97}, //Color 8
-	{56, 64, 100}, //Color 9
-	{67, 100, 46}, //Color 10
-};
 
-Color player_color[10] = {
-	{15, 66, 98}, //Color 1
-	{20, 86, 128}, //Color 2
-	{40, 66, 68}, //Color 3
-	{50, 76, 135}, //Color 4
-	{87, 34, 5}, //Color 5
-	{22, 45, 198}, //Color 6
-	{200, 100, 200}, //Color 7
-	{70, 43, 97}, //Color 8
-	{56, 64, 100}, //Color 9
-	{67, 100, 46}, //Color 10
-};
 
 int level = 0;
 
 class Player {
 	public:	
 		int posy=30, radius=15,  posx=2*radius, y_decider=0;
+		stack<int> oldx, oldy;
 		void draw_player(){
 			set_ydecider();  // continuosly changes y position of player
-			setcolor(COLOR(player_color[level].r, player_color[level].g, player_color[level].b));
-			setfillstyle(SOLID_FILL,COLOR(player_color[level].r, player_color[level].g, player_color[level].b));
+			setcolor(15);
+			setfillstyle(SOLID_FILL, 15);
 			circle(posx,posy,radius);
-			floodfill(posx,posy,COLOR(player_color[level].r, player_color[level].g, player_color[level].b));
+			floodfill(posx,posy, 15);
+			if(oldx.size() >= 14){
+				
+				for(int i=0; i<14; i++){
+					setcolor(obs_color[level]);
+					setfillstyle(SOLID_FILL, obs_color[level]);
+					circle(oldx.top(),oldy.top(), 15-i);
+				//	floodfill(oldx.top(),oldy.top(),  obs_color[level]);
+					oldx.pop();
+					oldy.pop();
+				}
+			}
 		}
 		void set_ydecider(){
 			if(posy>=getmaxy()-radius||posy<=radius)
 			y_decider=!y_decider;
 			if(y_decider) {
+				oldy.push(posy);
 				posy=posy+5;
 			} else {
+				oldy.push(posy);
 				posy=posy-5;
 			}
 		}
 		void set_posx_by_mouse_actions(int maxx){
-			//cout<<"posxxxx " << posx<< endl;
 			if(ismouseclick(WM_LBUTTONDOWN)){
-				if(posx>=radius)
+				if(posx>=radius){
+					oldx.push(posx);
 					posx=posx-10;
+				}
+
 			}
 			if(ismouseclick(WM_LBUTTONUP)){
 				clearmouseclick(WM_LBUTTONDOWN);
 				clearmouseclick(WM_LBUTTONUP);
 			}
 			if(ismouseclick(WM_RBUTTONDOWN)){
-				if(posx<=maxx-radius)
-				posx=posx+10;
+				if(posx<=maxx-radius){
+					oldx.push(posx);
+					posx=posx+10;
+				}
+
 			}
 			if(ismouseclick(WM_RBUTTONUP)){
 				clearmouseclick(WM_RBUTTONDOWN);
@@ -89,22 +87,25 @@ class Obstacles {
 		int posx,  posy=getmaxy(), radius=60, maxx=800;
 		
 		static void change_level(int score, int maxx, int midy){
-			if(score%25 == 0){
-				if(level < 10) level++;
+			if(score%5 == 0){
+				if(level < 5) level++;		
 			}
 		}
 		
 		void draw_obstacles(){
-			setcolor(COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
-			setfillstyle(SOLID_FILL, COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
+			setcolor(obs_color[level]);
+			setfillstyle(SOLID_FILL, obs_color[level]);
 			circle(posx,0,radius);
-			floodfill(posx,0, COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
+			floodfill(posx,0, obs_color[level]);
 			circle(posx,posy,radius);
-			floodfill(posx,posy, COLOR(obs_color[level].r, obs_color[level].g, obs_color[level].b));
-			if(posx-15<=0)
-				posx=maxx;
-			posx=posx-15;
+			floodfill(posx,posy, obs_color[level]);
+     
 		}   
+		void set_next_obs_position(){
+			if(posx-(15+level)<=0)
+				posx=maxx;
+			posx=posx-(15+level);   
+		}
 };
 
 
@@ -133,13 +134,24 @@ void initialize_game(int x, int y){
 	int counter=4;
 	while(counter>=1){
 		cleardevice();
-		settextstyle(COMPLEX_FONT, HORIZ_DIR, 3);
-	    outtextxy(x-40, y, (char *)"Welcome to SINE-V !!");
-		outtextxy(x, y+40, (char *)" Starts in ");
+				setcolor(7);
+		settextstyle(COMPLEX_FONT, HORIZ_DIR, 2);
+		outtextxy(x+490, 10, (char *)"Sirish");
+		outtextxy(10, 550, (char *)"Sreeram");
+		outtextxy(10, 10, (char *)"Kiran");
+		settextstyle(COMPLEX_FONT, HORIZ_DIR, 1);
+		outtextxy(x+350, 550, (char *)"Inspired by Sine Line");
+		settextstyle(COMPLEX_FONT, HORIZ_DIR, 5);
+		setcolor(14);
+	    outtextxy(x-20, y-50, (char *)" SINE-V");
+	    setcolor(15);
+	    settextstyle(COMPLEX_FONT, HORIZ_DIR, 4);
+		outtextxy(x-40, y, (char *)" Starts in  ");
 		char buffer[16] = {0};
 		itoa(counter, buffer, 10);
-		outtextxy(x+150, y+40, buffer);
-		counter--;
+		outtextxy(x+180, y, buffer);
+		outtextxy(x+180, y, buffer);
+		counter--; 
 		sleep(1);
 	}
 }
@@ -155,28 +167,8 @@ int check_for_pause(int pause, int midx, int midy){
 	return pause;
 }
 
-int mouse_actions(int x, int radius, int maxx){
-	if(ismouseclick(WM_LBUTTONDOWN)){
-		if(x>=radius)
-			x=x-10;
-	}
-	if(ismouseclick(WM_LBUTTONUP)){
-		clearmouseclick(WM_LBUTTONDOWN);
-		clearmouseclick(WM_LBUTTONUP);
-	}
-	if(ismouseclick(WM_RBUTTONDOWN)){
-		if(x<=maxx-radius)
-			x=x+10;
-	}
-	if(ismouseclick(WM_RBUTTONUP)){
-		clearmouseclick(WM_RBUTTONDOWN);
-		clearmouseclick(WM_RBUTTONUP);
-	}
-	return x;
-		
-}
 
-int main(){
+int main() {
 	initwindow(1000, 600); 
 	Player pl;    
 	Obstacles obs;  
@@ -197,7 +189,6 @@ int main(){
 //		pl.posx = player_x;
 		pl.draw_player();                     // Draw player in x position
 		obs.draw_obstacles();				  // Draw obstacles 
-		
 		// Condition checks for clashing player and obstacles
 		int d1 = sqrt((obs.posx-pl.posx)*(obs.posx-pl.posx) + (obs.posy-pl.posy)*(obs.posy-pl.posy));
 		int d2 = sqrt((obs.posx-pl.posx)*(obs.posx-pl.posx) + (0-pl.posy)*(0-pl.posy));
@@ -206,8 +197,8 @@ int main(){
 			outtextxy(midx, midy, (char *)".Game Over!");
 			break;
 		}
-		
-		delay(25);
+		obs.set_next_obs_position();
+		delay(20);
 		cleardevice();
 	}
 	char x=getch(); // pause games after gameover to see score
