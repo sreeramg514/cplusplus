@@ -166,19 +166,22 @@ int check_for_pause(int pause, int midx, int midy){
 	}
 	return pause;
 }
+int restart_game = 0;
 
 
-int main() {
-	initwindow(1000, 600); 
+void run_game(){
 	Player pl;    
 	Obstacles obs;  
 	int pause=0,  maxx=800, player_x;
-
+	if(restart_game){
+	level=-1;	
+	}
+	
 	int midx=maxx/2, midy=getmaxy()/2;
 	initialize_game(midx, midy);
 	chrono::steady_clock::time_point begin = chrono::steady_clock::now();
  
-	obs.posx=maxx-pl.radius;                                                    
+	obs.posx=maxx-pl.radius;  
 	while(1){
 		display_score(begin, maxx, midy); //Displays Score
 		pause = check_for_pause(pause, midx, midy);   // Checks for Pause and display pause
@@ -195,12 +198,30 @@ int main() {
 		if ((d1>=obs.radius-pl.radius && d1<pl.radius+obs.radius) or (d2>=obs.radius-pl.radius && d2<pl.radius+obs.radius)){
 			settextstyle(COMPLEX_FONT, HORIZ_DIR, 5);
 			outtextxy(midx, midy, (char *)".Game Over!");
+			settextstyle(COMPLEX_FONT, HORIZ_DIR, 3);
+			outtextxy(midx-100, midy+40, (char *)".Restart Game! Click here -> ");
+			setcolor(1);
+			setfillstyle(SOLID_FILL, 1);
+			circle(midx+330, midy+55,10);
+			floodfill(midx+330, midy+55, 1);
 			break;
 		}
 		obs.set_next_obs_position();
 		delay(20);
 		cleardevice();
 	}
+}
+void click_handler(int x, int y){
+    if (getpixel(x,y) == 1){
+    	restart_game=1;
+    	run_game();
+	}
+	
+}
+int main() {
+	initwindow(1000, 600);
+	run_game();
+	registermousehandler(WM_LBUTTONDOWN, click_handler);
 	char x=getch(); // pause games after gameover to see score
 	closegraph();
 }
